@@ -1,7 +1,7 @@
 #include "Zoom.h"
 
-Zoom::Zoom(const GameOfLife &game, std::vector<bool> &cellsMatrix)
-	: mGame(game)
+Zoom::Zoom(std::vector<bool> &cellsMatrix)
+	: mFractionOfTheGrid(5)
 	, mCellsMatrix(cellsMatrix)
 	, mIsActive(false)
 	, mOffsetX(0)
@@ -27,7 +27,7 @@ bool Zoom::isActive() const
 void Zoom::draw(sf::RenderWindow &window)
 {
 	int gridSize = GameOfLife::mGridSize;
-	int zoomAreaSize = gridSize / mGame.getFractionOfTheGrid();
+	int zoomAreaSize = gridSize / mFractionOfTheGrid;
 	int secondZoomAreaHalf = zoomAreaSize / 2;
 	int firstZoomAreaHalf = secondZoomAreaHalf - 1;
 
@@ -61,7 +61,7 @@ void Zoom::draw(sf::RenderWindow &window)
 
 	int cellsMatrixSize = GameOfLife::mGridSize;
 
-	int cellSize = mGame.getFractionOfTheGrid();
+	int cellSize = mFractionOfTheGrid;
 
 	int hStart = (mCenter.y - firstZoomAreaHalf) > 0 ? (mCenter.y - firstZoomAreaHalf) : 0;
 	int wStart = (mCenter.x - firstZoomAreaHalf) > 0 ? (mCenter.x - firstZoomAreaHalf) : 0;
@@ -89,9 +89,9 @@ sf::Vector2i Zoom::updateGrid(sf::Vector2i mousePosition)
 		return sf::Vector2i(-1, -1);
 	}
 	int gridSize = GameOfLife::mGridSize;
-	int firstZoomAreaHalf = gridSize / mGame.getFractionOfTheGrid() / 2 - 1;
+	int firstZoomAreaHalf = gridSize / mFractionOfTheGrid / 2 - 1;
 
-	int cellSize = mGame.getFractionOfTheGrid();
+	int cellSize = mFractionOfTheGrid;
 	int x = mousePosition.x / cellSize;
 	int y = mousePosition.y / cellSize;
 
@@ -107,3 +107,20 @@ sf::Vector2i Zoom::updateGrid(sf::Vector2i mousePosition)
 	mCellsMatrix[index] = !mCellsMatrix[index];
 	return sf::Vector2i(x, y);
 }
+
+const int Zoom::getFractionOfTheGrid() const
+{
+	return mFractionOfTheGrid;
+}
+
+void Zoom::augmentZoom()
+{
+	mFractionOfTheGrid = mFractionOfTheGrid + 1 > 16 ? mFractionOfTheGrid : mFractionOfTheGrid + 1;
+}
+
+void Zoom::reduceZoom()
+{
+	mFractionOfTheGrid = mFractionOfTheGrid - 1 < 2 ? mFractionOfTheGrid : mFractionOfTheGrid - 1;
+}
+
+

@@ -15,9 +15,8 @@ GameOfLife::GameOfLife()
 	, mCellsMatrix(mGridSize * mGridSize, false)
 	, mTempCellsMatrix(mGridSize * mGridSize, false)
 	, mGrid(sf::Points, mGridSize * mGridSize)
-	, mFractionOfTheGrid(5)
 	, mIsPaused(true)
-	, mZoom(*this, mCellsMatrix)
+	, mZoom(mCellsMatrix)
 	, mZoomArea()
 	, mMenu()
 	, mGeneration(0)
@@ -34,7 +33,7 @@ void GameOfLife::init()
 	mSeparator.setPosition(mGridSize - 1, 0);
 	mSeparator.setFillColor(sf::Color::Red);
 
-	float zoomAreaSize = mGridSize / mFractionOfTheGrid;
+	float zoomAreaSize = mGridSize / mZoom.getFractionOfTheGrid();
 	mZoomArea = sf::RectangleShape(sf::Vector2f(zoomAreaSize, zoomAreaSize));
 	mZoomArea.setOrigin(sf::Vector2f(zoomAreaSize / 2, zoomAreaSize / 2));
 	mZoomArea.setOutlineThickness(2);
@@ -155,17 +154,17 @@ void GameOfLife::handleEvent()
 				reverse_grid();
 				break;
 			case sf::Keyboard::P:
-	/*			mFractionOfTheGrid = mFractionOfTheGrid + 1 > 10 ? mFractionOfTheGrid : mFractionOfTheGrid + 1;
+				mZoom.augmentZoom();
 				resetInfos();
 				mIsPaused = true;
 				mZoom.out();
 				break;
 			case sf::Keyboard::M:
-				mFractionOfTheGrid = mFractionOfTheGrid - 1 < 2 ? mFractionOfTheGrid : mFractionOfTheGrid - 1;
+				mZoom.reduceZoom();
 				resetInfos();
 				mIsPaused = true;
 				mZoom.out();
-				break;*/
+				break;
 			default:
 				break;
 			}
@@ -400,9 +399,4 @@ void GameOfLife::speedUpDt(bool accelerate)
 	default:
 		break;
 	}
-}
-
-int GameOfLife::getFractionOfTheGrid() const
-{
-	return mFractionOfTheGrid;
 }

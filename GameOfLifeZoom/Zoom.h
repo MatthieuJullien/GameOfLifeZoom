@@ -6,17 +6,20 @@
 class Zoom
 {
 public:
-	Zoom(const GameOfLife &game, std::vector<bool> &cellsMatrix);
+	Zoom(std::vector<bool> &cellsMatrix);
 	void in(int x, int y);
 	void out();
 	bool isActive() const;
 	void draw(sf::RenderWindow &window);
 	sf::Vector2i updateGrid(sf::Vector2i mousePosition);
+	const int getFractionOfTheGrid() const;
+	void augmentZoom();
+	void reduceZoom();
 
 private:
 	bool mIsActive;
 	sf::Vector2i mCenter;
-	const GameOfLife &mGame;
+	int mFractionOfTheGrid;
 	std::vector<bool> &mCellsMatrix;
 	int mOffsetX;
 	int mOffsetY;

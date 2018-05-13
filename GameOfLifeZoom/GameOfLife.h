@@ -9,7 +9,6 @@ class GameOfLife
 public:
 	GameOfLife();
 	void run();
-	int getFractionOfTheGrid() const;
 
 	static const std::string mTitle;
 	static const size_t mGridSize;
@@ -38,7 +37,6 @@ private:
 	std::vector<bool> mTempCellsMatrix;
 	sf::VertexArray mGrid;
 	sf::Vector2i mZoomPosition;
-	int mFractionOfTheGrid;
 
 	int mGeneration;
 	bool mIsPaused;
