@@ -1,6 +1,6 @@
 #include "Menu.h"
 
-void Menu::draw(sf::RenderWindow & window, int generation, int speed, bool isZoom, bool isPaused)
+void Menu::draw(sf::RenderWindow & window, int generation, int speed, int zoomLevel, bool isZoom, bool isPaused)
 {
 	sf::Font font;
 	if (!font.loadFromFile("font1.ttf"))
@@ -39,6 +39,7 @@ void Menu::draw(sf::RenderWindow & window, int generation, int speed, bool isZoo
 	menuString = menuString
 		+ "Generation : " + std::to_string(generation) + "\n"
 		+ "Vitesse de la simulation : " + std::to_string(speed + 1) + "/7\n"
+		+ "Niveau de zoom : " + std::to_string(zoomLevel) + "\n"
 		+ "Zoom : " + zoomStr + "\n\n"
 		+ "Echap :\n"
 		+ "    Quitter\n\n"
@@ -46,6 +47,10 @@ void Menu::draw(sf::RenderWindow & window, int generation, int speed, bool isZoo
 		+ pause
 		+ "- / + :\n"
 		+ "    Modifier vitesse\n\n"
+		+ "P :\n"
+		+ "    Redémarre et augmente le niveau de zoom\n"
+		+ "M :\n"
+		+ "    Redémarre et diminue le niveau de zoom\n"
 		+ "0 à 9 :\n"
 		+ "    Redémarre et remplie la grille aléatoirement\n"
 		+ "    (0 à 90 % de cellules vivantes)\n\n"
@@ -60,6 +65,6 @@ void Menu::draw(sf::RenderWindow & window, int generation, int speed, bool isZoo
 	menu.setString(menuString);
 	menu.setCharacterSize(14);
 	menu.setFillColor(sf::Color::Blue);
-	menu.setPosition(620, 50);
+	menu.setPosition(620, 10);
 	window.draw(menu);
 }

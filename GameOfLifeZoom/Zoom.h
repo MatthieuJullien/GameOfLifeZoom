@@ -1,5 +1,4 @@
 #pragma once
-#include "GameOfLife.h"
 
 #include <SFML/Graphics.hpp>
 

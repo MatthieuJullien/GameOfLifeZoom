@@ -155,12 +155,14 @@ void GameOfLife::handleEvent()
 				break;
 			case sf::Keyboard::P:
 				mZoom.augmentZoom();
+				init();
 				resetInfos();
 				mIsPaused = true;
 				mZoom.out();
 				break;
 			case sf::Keyboard::M:
 				mZoom.reduceZoom();
+				init();
 				resetInfos();
 				mIsPaused = true;
 				mZoom.out();
@@ -272,7 +274,7 @@ void GameOfLife::render()
 		mZoom.draw(mWindow);
 	}
 	mWindow.draw(mSeparator);
-	mMenu.draw(mWindow, mGeneration, mSpeed, mZoom.isActive(), mIsPaused);
+	mMenu.draw(mWindow, mGeneration, mSpeed, mZoom.getFractionOfTheGrid(), mZoom.isActive(), mIsPaused);
 	mWindow.display();
 }
 

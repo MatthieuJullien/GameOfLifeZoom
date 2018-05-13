@@ -1,4 +1,5 @@
 #include "Zoom.h"
+#include "GameOfLife.h"
 
 Zoom::Zoom(std::vector<bool> &cellsMatrix)
 	: mFractionOfTheGrid(5)

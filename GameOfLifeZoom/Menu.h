@@ -3,6 +3,6 @@
 class Menu
 {
 public:
-	void draw(sf::RenderWindow &window, int generation, int speed, bool isZoom, bool isPaused);
+	void draw(sf::RenderWindow &window, int generation, int speed, int zoomLevel, bool isZoom, bool isPaused);
 };
 
