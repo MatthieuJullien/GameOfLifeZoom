@@ -40,7 +40,8 @@ void Menu::draw(sf::RenderWindow & window, int generation, int speed, int zoomLe
 		+ "Generation : " + std::to_string(generation) + "\n"
 		+ "Vitesse de la simulation : " + std::to_string(speed + 1) + "/7\n"
 		+ "Niveau de zoom : " + std::to_string(zoomLevel) + "\n"
-		+ "Zoom : " + zoomStr + "\n\n"
+		+ "Zoom : " + zoomStr + "\n"
+		+ "-----------------------------------------------------\n"
 		+ "Echap :\n"
 		+ "    Quitter\n\n"
 		+ "Entree, Space :\n"
@@ -50,7 +51,7 @@ void Menu::draw(sf::RenderWindow & window, int generation, int speed, int zoomLe
 		+ "P :\n"
 		+ "    Redémarre et augmente le niveau de zoom\n"
 		+ "M :\n"
-		+ "    Redémarre et diminue le niveau de zoom\n"
+		+ "    Redémarre et diminue le niveau de zoom\n\n"
 		+ "0 à 9 :\n"
 		+ "    Redémarre et remplie la grille aléatoirement\n"
 		+ "    (0 à 90 % de cellules vivantes)\n\n"
@@ -65,6 +66,6 @@ void Menu::draw(sf::RenderWindow & window, int generation, int speed, int zoomLe
 	menu.setString(menuString);
 	menu.setCharacterSize(14);
 	menu.setFillColor(sf::Color::Blue);
-	menu.setPosition(620, 10);
+	menu.setPosition(620, 5);
 	window.draw(menu);
 }
