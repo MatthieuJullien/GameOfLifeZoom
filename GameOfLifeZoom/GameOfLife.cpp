@@ -7,18 +7,19 @@ const size_t GameOfLife::mGridSize = 600;//600
 const sf::Color GameOfLife::mAliveColor = sf::Color::Green;
 const sf::Color GameOfLife::mDeadColor = sf::Color::Black;
 const sf::Color GameOfLife::mBackgroundColor = sf::Color(128, 128, 128, 255);
-const int GameOfLife::fractionOfTheGrid = 5;
 const sf::Time GameOfLife::mTimePerFrame = sf::seconds(1.f / 60.f);
 
 GameOfLife::GameOfLife()
-	: mWindow(sf::VideoMode(800, 600), mTitle, sf::Style::Titlebar | sf::Style::Close)
+	: mWindow(sf::VideoMode(1000, 600), mTitle, sf::Style::Titlebar | sf::Style::Close)
 	, mSeparator()
 	, mCellsMatrix(mGridSize * mGridSize, false)
 	, mTempCellsMatrix(mGridSize * mGridSize, false)
 	, mGrid(sf::Points, mGridSize * mGridSize)
+	, mFractionOfTheGrid(5)
 	, mIsPaused(true)
-	, mZoom(mCellsMatrix)
+	, mZoom(*this, mCellsMatrix)
 	, mZoomArea()
+	, mMenu()
 	, mGeneration(0)
 	, mSpeed(fast)
 	, mAccu(sf::Time::Zero)
@@ -33,7 +34,7 @@ void GameOfLife::init()
 	mSeparator.setPosition(mGridSize - 1, 0);
 	mSeparator.setFillColor(sf::Color::Red);
 
-	float zoomAreaSize = mGridSize / fractionOfTheGrid;
+	float zoomAreaSize = mGridSize / mFractionOfTheGrid;
 	mZoomArea = sf::RectangleShape(sf::Vector2f(zoomAreaSize, zoomAreaSize));
 	mZoomArea.setOrigin(sf::Vector2f(zoomAreaSize / 2, zoomAreaSize / 2));
 	mZoomArea.setOutlineThickness(2);
@@ -147,12 +148,24 @@ void GameOfLife::handleEvent()
 					updateVertices();
 				}
 				break;
-			case sf::Keyboard::I:
+			case sf::Keyboard::I:				
 				resetInfos();
 				mIsPaused = true;
 				mZoom.out();
 				reverse_grid();
 				break;
+			case sf::Keyboard::P:
+	/*			mFractionOfTheGrid = mFractionOfTheGrid + 1 > 10 ? mFractionOfTheGrid : mFractionOfTheGrid + 1;
+				resetInfos();
+				mIsPaused = true;
+				mZoom.out();
+				break;
+			case sf::Keyboard::M:
+				mFractionOfTheGrid = mFractionOfTheGrid - 1 < 2 ? mFractionOfTheGrid : mFractionOfTheGrid - 1;
+				resetInfos();
+				mIsPaused = true;
+				mZoom.out();
+				break;*/
 			default:
 				break;
 			}
@@ -172,7 +185,7 @@ void GameOfLife::handleEvent()
 					sf::Mouse::setPosition(mZoomPosition, mWindow);
 				}
 			}
-			else if (event.mouseButton.button == sf::Mouse::Left)
+			else if (mIsPaused && event.mouseButton.button == sf::Mouse::Left)
 			{
 				sf::Vector2i pos = sf::Mouse::getPosition(mWindow);
 				if (!mZoom.isActive())
@@ -194,7 +207,6 @@ void GameOfLife::handleEvent()
 						}
 					}
 				}
-
 			}
 		}
 		else if (event.type == sf::Event::Closed)
@@ -219,6 +231,31 @@ void GameOfLife::update(sf::Time dt)
 			updateVertices();
 		}
 	}
+
+	if (mIsPaused && !mZoom.isActive() && sf::Mouse::isButtonPressed(sf::Mouse::Left))
+	{
+		sf::Vector2i pos = sf::Mouse::getPosition(mWindow);
+		if (!mZoom.isActive())
+		{
+			if (pos.x < mGridSize && pos.y < mGridSize)
+			{
+				mCellsMatrix[pos.x + pos.y * mGridSize] = !mCellsMatrix[pos.x + pos.y * mGridSize];
+				mGrid[pos.x + pos.y * mGridSize].color = mCellsMatrix[pos.x + pos.y * mGridSize] ? mAliveColor : mDeadColor;
+			}
+		}
+		else
+		{
+			if (pos.x < mGridSize && pos.y < mGridSize)
+			{
+				sf::Vector2i coord = mZoom.updateGrid(pos);
+				if (coord != sf::Vector2i(-1, -1))
+				{
+					mGrid[coord.x + coord.y * mGridSize].color = mCellsMatrix[coord.x + coord.y * mGridSize] ? mAliveColor : mDeadColor;
+				}
+			}
+		}
+	}
+
 	sf::Vector2i mousePosition = sf::Mouse::getPosition(mWindow);
 	mZoomArea.setPosition(static_cast<sf::Vector2f>(mousePosition));
 }
@@ -236,6 +273,7 @@ void GameOfLife::render()
 		mZoom.draw(mWindow);
 	}
 	mWindow.draw(mSeparator);
+	mMenu.draw(mWindow, mGeneration, mSpeed, mZoom.isActive(), mIsPaused);
 	mWindow.display();
 }
 
@@ -307,7 +345,6 @@ void GameOfLife::populate(int ratio)
 			{
 				int alea = uniform_dist(e1);
 				mCellsMatrix[w + h * mGridSize] = alea < ratio ? true : false;
-				//mGrid[w + h * mGridSize].position = sf::Vector2f(w, h);
 			}
 		}
 		updateVertices();
@@ -363,4 +400,9 @@ void GameOfLife::speedUpDt(bool accelerate)
 	default:
 		break;
 	}
+}
+
+int GameOfLife::getFractionOfTheGrid() const
+{
+	return mFractionOfTheGrid;
 }

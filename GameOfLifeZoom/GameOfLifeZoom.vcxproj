@@ -13,11 +13,16 @@
   <ItemGroup>
     <ClCompile Include="GameOfLife.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Menu.cpp" />
     <ClCompile Include="Zoom.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameOfLife.h" />
+    <ClInclude Include="Menu.h" />
     <ClInclude Include="Zoom.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="font1.ttf" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
