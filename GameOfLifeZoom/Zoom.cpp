@@ -27,7 +27,7 @@ bool Zoom::isActive() const
 
 void Zoom::draw(sf::RenderWindow &window)
 {
-	int gridSize = GameOfLife::mGridSize;
+	int gridSize = GameOfLife::sGridSize;
 	int zoomAreaSize = gridSize / mFractionOfTheGrid;
 	int secondZoomAreaHalf = zoomAreaSize / 2;
 	int firstZoomAreaHalf = secondZoomAreaHalf - 1;
@@ -60,7 +60,7 @@ void Zoom::draw(sf::RenderWindow &window)
 		zoomAreaHeight = zoomAreaSize;
 	}
 
-	int cellsMatrixSize = GameOfLife::mGridSize;
+	int cellsMatrixSize = GameOfLife::sGridSize;
 
 	int cellSize = mFractionOfTheGrid;
 
@@ -75,7 +75,7 @@ void Zoom::draw(sf::RenderWindow &window)
 			sf::Vector2f cellPosition(w * cellSize + mOffsetX, h * cellSize + mOffsetY);
 			int index = w + wStart + (h + hStart) * gridSize;
 			sf::RectangleShape cell(sf::Vector2f(cellSize, cellSize));
-			sf::Color cellColor = mCellsMatrix[index] ? GameOfLife::mAliveColor : GameOfLife::mDeadColor;
+			sf::Color cellColor = mCellsMatrix[index] ? GameOfLife::sAliveColor : GameOfLife::sDeadColor;
 			cell.setFillColor(cellColor);
 			cell.setPosition(cellPosition);
 			window.draw(cell);
@@ -89,7 +89,7 @@ sf::Vector2i Zoom::updateGrid(sf::Vector2i mousePosition)
 	{
 		return sf::Vector2i(-1, -1);
 	}
-	int gridSize = GameOfLife::mGridSize;
+	int gridSize = GameOfLife::sGridSize;
 	int firstZoomAreaHalf = gridSize / mFractionOfTheGrid / 2 - 1;
 
 	int cellSize = mFractionOfTheGrid;

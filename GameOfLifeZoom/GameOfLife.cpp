@@ -1,27 +1,31 @@
 #include "GameOfLife.h"
 #include <random>
 #include <cassert>
+#include <iostream>//TODO
 
-const std::string GameOfLife::mTitle = "Game of Life";
-const size_t GameOfLife::mGridSize = 600;//600
-const sf::Color GameOfLife::mAliveColor = sf::Color::Green;
-const sf::Color GameOfLife::mDeadColor = sf::Color::Black;
-const sf::Color GameOfLife::mBackgroundColor = sf::Color(128, 128, 128, 255);
-const sf::Time GameOfLife::mTimePerFrame = sf::seconds(1.f / 60.f);
+const std::string GameOfLife::sTitle = "Game of Life";
+const size_t GameOfLife::sGridSize = 600;//600
+const sf::Color GameOfLife::sAliveColor = sf::Color::Green;
+const sf::Color GameOfLife::sDeadColor = sf::Color::Black;
+const sf::Color GameOfLife::sBackgroundColor = sf::Color(128, 128, 128, 255);
+const sf::Time GameOfLife::sTimePerFrame = sf::seconds(1.f / 60.f);
 
 GameOfLife::GameOfLife()
-	: mWindow(sf::VideoMode(1000, 600), mTitle, sf::Style::Titlebar | sf::Style::Close)
+	: mWindow(sf::VideoMode(1000, 600), sTitle, sf::Style::Titlebar | sf::Style::Close)
 	, mSeparator()
-	, mCellsMatrix(mGridSize * mGridSize, false)
-	, mTempCellsMatrix(mGridSize * mGridSize, false)
-	, mGrid(sf::Points, mGridSize * mGridSize)
+	, mFont()
+	, mCellsMatrix(sGridSize * sGridSize, false)
+	, mTempCellsMatrix(sGridSize * sGridSize, false)
+	, mGrid(sf::Points, sGridSize * sGridSize)
 	, mIsPaused(true)
 	, mZoom(mCellsMatrix)
 	, mZoomArea()
-	, mMenu()
+	, mFileModule(mWindow, mFont)
+	, mMenu(mFont)
 	, mGeneration(0)
 	, mSpeed(fast)
 	, mAccu(sf::Time::Zero)
+	, mBuffer()
 {
 	init();
 	resetInfos();
@@ -29,29 +33,40 @@ GameOfLife::GameOfLife()
 
 void GameOfLife::init()
 {
-	mSeparator = sf::RectangleShape(sf::Vector2f(2, mGridSize));
-	mSeparator.setPosition(mGridSize - 1, 0);
+	mSeparator = sf::RectangleShape(sf::Vector2f(2, sGridSize));
+	mSeparator.setPosition(sGridSize - 1, 0);
 	mSeparator.setFillColor(sf::Color::Red);
 
-	float zoomAreaSize = mGridSize / mZoom.getFractionOfTheGrid();
+	initZoomArea();
+
+	for (int h = 0; h < sGridSize; ++h) {
+		for (int w = 0; w < sGridSize; ++w) {
+			mGrid[w + h * sGridSize].position = sf::Vector2f(w, h);
+			mGrid[w + h * sGridSize].color = sDeadColor;
+		}
+	}
+
+	if (!mFont.loadFromFile("font1.ttf"))
+	{
+		throw std::runtime_error("Unable to load font1.ttf");
+	}
+}
+
+void GameOfLife::initZoomArea()
+{
+	float zoomAreaSize = sGridSize / mZoom.getFractionOfTheGrid();
 	mZoomArea = sf::RectangleShape(sf::Vector2f(zoomAreaSize, zoomAreaSize));
 	mZoomArea.setOrigin(sf::Vector2f(zoomAreaSize / 2, zoomAreaSize / 2));
 	mZoomArea.setOutlineThickness(2);
 	mZoomArea.setOutlineColor(sf::Color::Red);
 	mZoomArea.setFillColor(sf::Color::Transparent);
-
-	for (int h = 0; h < mGridSize; ++h) {
-		for (int w = 0; w < mGridSize; ++w) {
-			mGrid[w + h * mGridSize].position = sf::Vector2f(w, h);
-			mGrid[w + h * mGridSize].color = mDeadColor;
-		}
-	}
 }
+
 
 void GameOfLife::resetInfos()
 {
 	mGeneration = 0;
-	std::string title = mTitle + " : 0";
+	std::string title = sTitle + " : 0";
 	mWindow.setTitle(title);
 	mSpeed = fast;
 	mDelay = sf::seconds(1.f / 60.f);
@@ -65,11 +80,11 @@ void GameOfLife::run()
 	while (mWindow.isOpen())
 	{
 		timeSinceLastUpdate += clock.restart();
-		while (timeSinceLastUpdate > mTimePerFrame)
+		while (timeSinceLastUpdate > sTimePerFrame)
 		{
-			timeSinceLastUpdate -= mTimePerFrame;
+			timeSinceLastUpdate -= sTimePerFrame;
 			handleEvent();
-			update(mTimePerFrame);
+			update(sTimePerFrame);
 		}
 		render();
 	}
@@ -80,96 +95,17 @@ void GameOfLife::handleEvent()
 	sf::Event event;
 	while (mWindow.pollEvent(event))
 	{
+		if ((mFileModule.isSaving() || mFileModule.isLoading()))
+		{
+			if (event.type == sf::Event::TextEntered && event.text.unicode < 128)
+			{
+				mBuffer += static_cast<char>(event.text.unicode);
+			}
+		}
+
 		if (event.type == sf::Event::KeyPressed)
 		{
-			switch (event.key.code)
-			{
-			case sf::Keyboard::Escape:
-				mWindow.close();
-				break;
-			case sf::Keyboard::Return:
-			case sf::Keyboard::Space:
-				mIsPaused = !mIsPaused;
-				break;
-			case sf::Keyboard::Subtract:
-				speedUpDt(false);
-				break;
-			case sf::Keyboard::Add:
-				speedUpDt(true);
-				break;
-			case sf::Keyboard::Num0:
-			case sf::Keyboard::Numpad0:
-				populate(0);
-				break;
-			case sf::Keyboard::Num1:
-			case sf::Keyboard::Numpad1:
-				populate(1);
-				break;
-			case sf::Keyboard::Num2:
-			case sf::Keyboard::Numpad2:
-				populate(2);
-				break;
-			case sf::Keyboard::Num3:
-			case sf::Keyboard::Numpad3:
-				populate(3);
-				break;
-			case sf::Keyboard::Num4:
-			case sf::Keyboard::Numpad4:
-				populate(4);
-				break;
-			case sf::Keyboard::Num5:
-			case sf::Keyboard::Numpad5:
-				populate(5);
-				break;
-			case sf::Keyboard::Num6:
-			case sf::Keyboard::Numpad6:
-				populate(6);
-				break;
-			case sf::Keyboard::Num7:
-			case sf::Keyboard::Numpad7:
-				populate(7);
-				break;
-			case sf::Keyboard::Num8:
-			case sf::Keyboard::Numpad8:
-				populate(8);
-				break;
-			case sf::Keyboard::Num9:
-			case sf::Keyboard::Numpad9:
-				populate(9);
-				break;
-			case sf::Keyboard::S:
-				if (mIsPaused)
-				{
-					updateGrid();
-					++mGeneration;
-					std::string title = mTitle + " : " + std::to_string(mGeneration);
-					mWindow.setTitle(title);
-					updateVertices();
-				}
-				break;
-			case sf::Keyboard::I:				
-				resetInfos();
-				mIsPaused = true;
-				mZoom.out();
-				reverse_grid();
-				break;
-			case sf::Keyboard::P:
-				mZoom.augmentZoom();
-				init();
-				resetInfos();
-				mIsPaused = true;
-				mZoom.out();
-				break;
-			case sf::Keyboard::M:
-				mZoom.reduceZoom();
-				init();
-				resetInfos();
-				mIsPaused = true;
-				mZoom.out();
-				break;
-			default:
-				break;
-			}
+			handleKeyPressed(event.key.code);
 		}
 		else if (event.type == sf::Event::MouseButtonPressed)
 		{
@@ -191,20 +127,20 @@ void GameOfLife::handleEvent()
 				sf::Vector2i pos = sf::Mouse::getPosition(mWindow);
 				if (!mZoom.isActive())
 				{
-					if (pos.x < mGridSize && pos.y < mGridSize)
+					if (pos.x < sGridSize && pos.y < sGridSize)
 					{
-						mCellsMatrix[pos.x + pos.y * mGridSize] = !mCellsMatrix[pos.x + pos.y * mGridSize];
-						mGrid[pos.x + pos.y * mGridSize].color = mCellsMatrix[pos.x + pos.y * mGridSize] ? mAliveColor : mDeadColor;
+						mCellsMatrix[pos.x + pos.y * sGridSize] = !mCellsMatrix[pos.x + pos.y * sGridSize];
+						mGrid[pos.x + pos.y * sGridSize].color = mCellsMatrix[pos.x + pos.y * sGridSize] ? sAliveColor : sDeadColor;
 					}
 				}
 				else
 				{
-					if (pos.x < mGridSize && pos.y < mGridSize)
+					if (pos.x < sGridSize && pos.y < sGridSize)
 					{
 						sf::Vector2i coord = mZoom.updateGrid(pos);
 						if (coord != sf::Vector2i(-1, -1))
 						{
-							mGrid[coord.x + coord.y * mGridSize].color = mCellsMatrix[coord.x + coord.y * mGridSize] ? mAliveColor : mDeadColor;
+							mGrid[coord.x + coord.y * sGridSize].color = mCellsMatrix[coord.x + coord.y * sGridSize] ? sAliveColor : sDeadColor;
 						}
 					}
 				}
@@ -214,6 +150,123 @@ void GameOfLife::handleEvent()
 		{
 			mWindow.close();
 		}
+	}
+}
+
+void GameOfLife::handleKeyPressed(sf::Keyboard::Key key)
+{
+	if (mFileModule.hasMessage())
+	{
+		mFileModule.clearMessage();
+	}
+	switch (key)
+	{
+	case sf::Keyboard::Escape:
+		mWindow.close();
+		break;
+	case sf::Keyboard::Return:
+		if (mFileModule.isSaving())
+		{
+			mFileModule.saveGrid(mCellsMatrix, mBuffer);
+			mBuffer.clear();
+		}
+		else if (mFileModule.isLoading())
+		{
+			if (mFileModule.loadGrid(mCellsMatrix, mBuffer) && !mZoom.isActive())
+			{
+				updateVertices();
+			}
+			mBuffer.clear();
+		}
+		mIsPaused = !mIsPaused;
+		break;
+	case sf::Keyboard::Space:
+		mIsPaused = !mIsPaused;
+		break;
+	case sf::Keyboard::Subtract:
+		speedUpDt(false);
+		break;
+	case sf::Keyboard::Add:
+		speedUpDt(true);
+		break;
+	case sf::Keyboard::Num0:
+	case sf::Keyboard::Numpad0:
+		populate(0);
+		break;
+	case sf::Keyboard::Num1:
+	case sf::Keyboard::Numpad1:
+		populate(1);
+		break;
+	case sf::Keyboard::Num2:
+	case sf::Keyboard::Numpad2:
+		populate(2);
+		break;
+	case sf::Keyboard::Num3:
+	case sf::Keyboard::Numpad3:
+		populate(3);
+		break;
+	case sf::Keyboard::Num4:
+	case sf::Keyboard::Numpad4:
+		populate(4);
+		break;
+	case sf::Keyboard::Num5:
+	case sf::Keyboard::Numpad5:
+		populate(5);
+		break;
+	case sf::Keyboard::Num6:
+	case sf::Keyboard::Numpad6:
+		populate(6);
+		break;
+	case sf::Keyboard::Num7:
+	case sf::Keyboard::Numpad7:
+		populate(7);
+		break;
+	case sf::Keyboard::Num8:
+	case sf::Keyboard::Numpad8:
+		populate(8);
+		break;
+	case sf::Keyboard::Num9:
+	case sf::Keyboard::Numpad9:
+		populate(9);
+		break;
+	case sf::Keyboard::N:
+		if (mIsPaused)
+		{
+			updateGrid();
+			++mGeneration;
+			std::string title = sTitle + " : " + std::to_string(mGeneration);
+			mWindow.setTitle(title);
+			updateVertices();
+		}
+		break;
+	case sf::Keyboard::I:
+		resetInfos();
+		mIsPaused = true;
+		mZoom.out();
+		reverse_grid();
+		break;
+	case sf::Keyboard::P:
+		mZoom.augmentZoom();
+		initZoomArea();
+		break;
+	case sf::Keyboard::M:
+		mZoom.reduceZoom();
+		initZoomArea();
+		break;
+	case sf::Keyboard::C:
+		if (mIsPaused)
+		{
+			mFileModule.load();
+		}
+		break;
+	case sf::Keyboard::S:
+		if (mIsPaused)
+		{
+			mFileModule.save();
+		}
+		break;
+	default:
+		break;
 	}
 }
 
@@ -227,7 +280,7 @@ void GameOfLife::update(sf::Time dt)
 			mAccu = sf::Time::Zero;
 			updateGrid();
 			++mGeneration;
-			std::string title = mTitle + " : " + std::to_string(mGeneration);
+			std::string title = sTitle + " : " + std::to_string(mGeneration);
 			mWindow.setTitle(title);
 			updateVertices();
 		}
@@ -238,20 +291,20 @@ void GameOfLife::update(sf::Time dt)
 		sf::Vector2i pos = sf::Mouse::getPosition(mWindow);
 		if (!mZoom.isActive())
 		{
-			if (pos.x < mGridSize && pos.y < mGridSize)
+			if (pos.x < sGridSize && pos.y < sGridSize)
 			{
-				mCellsMatrix[pos.x + pos.y * mGridSize] = !mCellsMatrix[pos.x + pos.y * mGridSize];
-				mGrid[pos.x + pos.y * mGridSize].color = mCellsMatrix[pos.x + pos.y * mGridSize] ? mAliveColor : mDeadColor;
+				mCellsMatrix[pos.x + pos.y * sGridSize] = !mCellsMatrix[pos.x + pos.y * sGridSize];
+				mGrid[pos.x + pos.y * sGridSize].color = mCellsMatrix[pos.x + pos.y * sGridSize] ? sAliveColor : sDeadColor;
 			}
 		}
 		else
 		{
-			if (pos.x < mGridSize && pos.y < mGridSize)
+			if (pos.x < sGridSize && pos.y < sGridSize)
 			{
 				sf::Vector2i coord = mZoom.updateGrid(pos);
 				if (coord != sf::Vector2i(-1, -1))
 				{
-					mGrid[coord.x + coord.y * mGridSize].color = mCellsMatrix[coord.x + coord.y * mGridSize] ? mAliveColor : mDeadColor;
+					mGrid[coord.x + coord.y * sGridSize].color = mCellsMatrix[coord.x + coord.y * sGridSize] ? sAliveColor : sDeadColor;
 				}
 			}
 		}
@@ -263,7 +316,7 @@ void GameOfLife::update(sf::Time dt)
 
 void GameOfLife::render()
 {
-	mWindow.clear(mBackgroundColor);
+	mWindow.clear(sBackgroundColor);
 	if (!mZoom.isActive())
 	{
 		mWindow.draw(mGrid);
@@ -275,45 +328,46 @@ void GameOfLife::render()
 	}
 	mWindow.draw(mSeparator);
 	mMenu.draw(mWindow, mGeneration, mSpeed, mZoom.getFractionOfTheGrid(), mZoom.isActive(), mIsPaused);
+	mFileModule.draw(mBuffer);
 	mWindow.display();
 }
 
 void GameOfLife::updateGrid()
 {
 	int nb_neighbor;
-	int indexWidthMax = mGridSize - 1;
-	int indexHeightMax = mGridSize - 1;
-	for (int h = 0; h < mGridSize; ++h)
+	int indexWidthMax = sGridSize - 1;
+	int indexHeightMax = sGridSize - 1;
+	for (int h = 0; h < sGridSize; ++h)
 	{
-		for (int w = 0; w < mGridSize; ++w)
+		for (int w = 0; w < sGridSize; ++w)
 		{
 			nb_neighbor = 0;
 			//line above
-			if (w > 0 && h > 0 && mCellsMatrix[w - 1 + mGridSize * (h - 1)])
+			if (w > 0 && h > 0 && mCellsMatrix[w - 1 + sGridSize * (h - 1)])
 				++nb_neighbor;
-			if (h > 0 && mCellsMatrix[w + mGridSize * (h - 1)])
+			if (h > 0 && mCellsMatrix[w + sGridSize * (h - 1)])
 				++nb_neighbor;
-			if (w < indexWidthMax && h > 0 && mCellsMatrix[w + 1 + mGridSize * (h - 1)])
+			if (w < indexWidthMax && h > 0 && mCellsMatrix[w + 1 + sGridSize * (h - 1)])
 				++nb_neighbor;
 			//same line
-			if (w > 0 && mCellsMatrix[w - 1 + mGridSize * h])
+			if (w > 0 && mCellsMatrix[w - 1 + sGridSize * h])
 				++nb_neighbor;
-			if (w < indexWidthMax && mCellsMatrix[w + 1 + mGridSize * h])
+			if (w < indexWidthMax && mCellsMatrix[w + 1 + sGridSize * h])
 				++nb_neighbor;
 			//line below
-			if (w > 0 && h < indexHeightMax && mCellsMatrix[w - 1 + mGridSize * (h + 1)])
+			if (w > 0 && h < indexHeightMax && mCellsMatrix[w - 1 + sGridSize * (h + 1)])
 				++nb_neighbor;
-			if (h < indexHeightMax && mCellsMatrix[w + mGridSize * (h + 1)])
+			if (h < indexHeightMax && mCellsMatrix[w + sGridSize * (h + 1)])
 				++nb_neighbor;
-			if (w < indexWidthMax && h < indexHeightMax && mCellsMatrix[w + 1 + mGridSize * (h + 1)])
+			if (w < indexWidthMax && h < indexHeightMax && mCellsMatrix[w + 1 + sGridSize * (h + 1)])
 				++nb_neighbor;
 			//cell update
-			if (!mCellsMatrix[w + mGridSize * h] && nb_neighbor == 3)
-				mTempCellsMatrix[w + mGridSize * h] = true;
-			else if (mCellsMatrix[w + mGridSize * h] && (nb_neighbor < 2 || nb_neighbor > 3))
-				mTempCellsMatrix[w + mGridSize * h] = false;
+			if (!mCellsMatrix[w + sGridSize * h] && nb_neighbor == 3)
+				mTempCellsMatrix[w + sGridSize * h] = true;
+			else if (mCellsMatrix[w + sGridSize * h] && (nb_neighbor < 2 || nb_neighbor > 3))
+				mTempCellsMatrix[w + sGridSize * h] = false;
 			else
-				mTempCellsMatrix[w + mGridSize * h] = mCellsMatrix[w + mGridSize * h];
+				mTempCellsMatrix[w + sGridSize * h] = mCellsMatrix[w + sGridSize * h];
 		}
 	}
 	mCellsMatrix.swap(mTempCellsMatrix);
@@ -322,12 +376,12 @@ void GameOfLife::updateGrid()
 void GameOfLife::updateVertices()
 {
 	int index;
-	for (int h = 0; h < mGridSize; ++h)
+	for (int h = 0; h < sGridSize; ++h)
 	{
-		for (int w = 0; w < mGridSize; ++w)
+		for (int w = 0; w < sGridSize; ++w)
 		{
-			index = w + h * mGridSize;
-			mGrid[index].color = mCellsMatrix[index] ? mAliveColor : mDeadColor;
+			index = w + h * sGridSize;
+			mGrid[index].color = mCellsMatrix[index] ? sAliveColor : sDeadColor;
 		}
 	}
 }
@@ -340,12 +394,12 @@ void GameOfLife::populate(int ratio)
 		std::random_device r;
 		std::default_random_engine e1(r());
 		std::uniform_int_distribution<int> uniform_dist(0, 9);
-		for (int h = 0; h < mGridSize; ++h)
+		for (int h = 0; h < sGridSize; ++h)
 		{
-			for (int w = 0; w < mGridSize; ++w)
+			for (int w = 0; w < sGridSize; ++w)
 			{
 				int alea = uniform_dist(e1);
-				mCellsMatrix[w + h * mGridSize] = alea < ratio ? true : false;
+				mCellsMatrix[w + h * sGridSize] = alea < ratio ? true : false;
 			}
 		}
 		updateVertices();
@@ -355,11 +409,11 @@ void GameOfLife::populate(int ratio)
 void GameOfLife::reverse_grid()
 {
 	assert(mIsPaused);
-	for (int h = 0; h < mGridSize; ++h)
+	for (int h = 0; h < sGridSize; ++h)
 	{
-		for (int w = 0; w < mGridSize; ++w)
+		for (int w = 0; w < sGridSize; ++w)
 		{
-			mCellsMatrix[w + h * mGridSize] = !mCellsMatrix[w + h * mGridSize];
+			mCellsMatrix[w + h * sGridSize] = !mCellsMatrix[w + h * sGridSize];
 		}
 	}
 	updateVertices();
