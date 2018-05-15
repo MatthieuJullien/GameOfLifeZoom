@@ -1,4 +1,4 @@
-#include "Zoom.h"
+#include "Zoom.h"	//TODO utiliser vertexarray de rect pour le zoom
 #include "GameOfLife.h"
 
 Zoom::Zoom(std::vector<bool> &cellsMatrix)

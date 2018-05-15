@@ -21,13 +21,14 @@ public:
 	
 
 private:
+	void handleFileEvent();
 	void handleEvent();
 	void update(sf::Time dt);
 	void render();
 
 	void init();
 	void initZoomArea();
-	void handleKeyPressed(sf::Keyboard::Key key);
+	void handleKeyPressed(const sf::Keyboard::Key &key);
 	void resetInfos();
 	void updateGrid();
 	void updateVertices();

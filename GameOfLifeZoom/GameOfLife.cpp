@@ -83,10 +83,70 @@ void GameOfLife::run()
 		while (timeSinceLastUpdate > sTimePerFrame)
 		{
 			timeSinceLastUpdate -= sTimePerFrame;
-			handleEvent();
+			if (mFileModule.hasMessage())
+			{
+				handleFileEvent();
+			}
+			else
+			{
+				handleEvent();
+			}
+			
 			update(sTimePerFrame);
 		}
 		render();
+	}
+}
+
+void GameOfLife::handleFileEvent()
+{
+	sf::Event event;
+	while (mWindow.pollEvent(event))
+	{	
+		if (mFileModule.isSaving() || mFileModule.isLoading())
+		{
+			if (event.type == sf::Event::TextEntered && event.text.unicode < 128)
+			{
+				char c = static_cast<char>(event.text.unicode);
+				if (isalnum(c))
+				{
+					mBuffer += c;
+				}			
+				mFileModule.popMessage();
+				mFileModule.printMessage("    " + mBuffer);
+			}
+			else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::BackSpace)
+			{
+				if (!mBuffer.empty())
+				{
+					mBuffer.pop_back();
+				}
+			}
+			else if (event.key.code == sf::Keyboard::Return)
+			{
+				if (mFileModule.isSaving())
+				{
+					mFileModule.saveGrid(mCellsMatrix, mBuffer);
+					mBuffer.clear();
+				}
+				else if (mFileModule.isLoading())
+				{
+					if (mFileModule.loadGrid(mCellsMatrix, mBuffer) && !mZoom.isActive())
+					{
+						updateVertices();
+					}
+					mBuffer.clear();
+				}
+			}
+		}
+		else if (event.type == sf::Event::KeyPressed || event.type == sf::Event::MouseButtonReleased)
+		{
+			mFileModule.clearMessage();
+		}
+		else if (event.type == sf::Event::Closed)
+		{
+			mWindow.close();
+		}
 	}
 }
 
@@ -95,17 +155,27 @@ void GameOfLife::handleEvent()
 	sf::Event event;
 	while (mWindow.pollEvent(event))
 	{
-		if ((mFileModule.isSaving() || mFileModule.isLoading()))
-		{
-			if (event.type == sf::Event::TextEntered && event.text.unicode < 128)
-			{
-				mBuffer += static_cast<char>(event.text.unicode);
-			}
-		}
-
 		if (event.type == sf::Event::KeyPressed)
 		{
 			handleKeyPressed(event.key.code);
+		}
+		else if (event.type == sf::Event::KeyReleased)
+		{
+			switch (event.key.code)
+			{
+			case sf::Keyboard::C:
+				if (mIsPaused)
+				{
+					mFileModule.load();
+				}
+				break;
+			case sf::Keyboard::S:
+				if (mIsPaused)
+				{
+					mFileModule.save();
+				}
+				break;
+			}
 		}
 		else if (event.type == sf::Event::MouseButtonPressed)
 		{
@@ -153,31 +223,14 @@ void GameOfLife::handleEvent()
 	}
 }
 
-void GameOfLife::handleKeyPressed(sf::Keyboard::Key key)
+void GameOfLife::handleKeyPressed(const sf::Keyboard::Key &key)
 {
-	if (mFileModule.hasMessage())
-	{
-		mFileModule.clearMessage();
-	}
 	switch (key)
 	{
 	case sf::Keyboard::Escape:
 		mWindow.close();
 		break;
 	case sf::Keyboard::Return:
-		if (mFileModule.isSaving())
-		{
-			mFileModule.saveGrid(mCellsMatrix, mBuffer);
-			mBuffer.clear();
-		}
-		else if (mFileModule.isLoading())
-		{
-			if (mFileModule.loadGrid(mCellsMatrix, mBuffer) && !mZoom.isActive())
-			{
-				updateVertices();
-			}
-			mBuffer.clear();
-		}
 		mIsPaused = !mIsPaused;
 		break;
 	case sf::Keyboard::Space:
@@ -252,18 +305,6 @@ void GameOfLife::handleKeyPressed(sf::Keyboard::Key key)
 	case sf::Keyboard::M:
 		mZoom.reduceZoom();
 		initZoomArea();
-		break;
-	case sf::Keyboard::C:
-		if (mIsPaused)
-		{
-			mFileModule.load();
-		}
-		break;
-	case sf::Keyboard::S:
-		if (mIsPaused)
-		{
-			mFileModule.save();
-		}
 		break;
 	default:
 		break;

@@ -16,6 +16,8 @@ bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, const std::string &fil
 	if (!outputFile.is_open())
 	{
 		printMessage(std::string("Sauvegarde de ") + filename + " a échoué.");
+		printMessage("Appuyez sur une touche pour continuer...");
+		mIsSaving = false;
 		return false;
 	}
 	int byte_index = 0;
@@ -36,6 +38,8 @@ bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, const std::string &fil
 	}
 	outputFile.close();
 	printMessage(filename + " sauvegardé !");
+	printMessage("Appuyez sur une touche pour continuer...");
+	mIsSaving = false;
 	return true;
 }
 
@@ -46,6 +50,8 @@ bool FileModule::loadGrid(std::vector<bool>& cellsMatrix, const std::string &fil
 	if (!inputFile.is_open())
 	{
 		printMessage(std::string("Chargement de ") + filename + " a échoué.");
+		printMessage("Appuyez sur une touche pour continuer...");
+		mIsLoading = false;
 		return false;
 	}
 	size_t size = cellsMatrix.size() / 8;//nombre d'octects à lire : 45000
@@ -63,17 +69,23 @@ bool FileModule::loadGrid(std::vector<bool>& cellsMatrix, const std::string &fil
 	delete[] buffer;
 	inputFile.close();
 	printMessage(filename + " chargé !");
+	printMessage("Appuyez sur une touche pour continuer...");
+	mIsLoading = false;
 	return true;
 }
 
 void FileModule::save()
 {
 	mIsSaving = true;
+	printMessage("Entrez le nom de la grille :");
+	printMessage("");
 }
 
 void FileModule::load()
 {
 	mIsLoading = true;
+	printMessage("Entrez le nom de la grille à charger :");
+	printMessage("");
 }
 
 bool FileModule::isSaving()
@@ -88,7 +100,13 @@ bool FileModule::isLoading()
 
 void FileModule::draw(std::string &filenameBuffer)
 {
+	if (mIsSaving)
+		std::cout << "saving in : ";
+	if (mIsLoading)
+		std::cout << "loading : ";
 	std::cout << filenameBuffer << std::endl;
+
+
 	if (mHasMessage)
 	{
 		sf::Vector2f winSize(mWindow.getSize());
@@ -110,9 +128,6 @@ void FileModule::draw(std::string &filenameBuffer)
 			msgText.setPosition(xText, yText);
 			mWindow.draw(msgText);
 		}
-		msgText.setString("Appuyez sur une touche pour continuer...");
-		yText += 30;
-		msgText.setPosition(xText, yText);
 		mWindow.draw(msgText);
 	}
 }
@@ -121,6 +136,18 @@ void FileModule::printMessage(std::string message)
 {
 	mMessage.push_back(message);
 	mHasMessage = true;
+}
+
+void FileModule::popMessage()
+{
+	if (!mMessage.empty())
+	{
+		mMessage.pop_back();
+	}
+	if (mMessage.empty())
+	{
+		mHasMessage = false;
+	}
 }
 
 void FileModule::clearMessage()

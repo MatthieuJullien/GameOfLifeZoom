@@ -16,6 +16,7 @@ public:
 	bool isLoading();
 	void draw(std::string &filenameBuffer);
 	void printMessage(std::string message);
+	void popMessage();
 	void clearMessage();
 	bool hasMessage();
 
