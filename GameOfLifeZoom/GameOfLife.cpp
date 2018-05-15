@@ -1,7 +1,6 @@
 #include "GameOfLife.h"
 #include <random>
 #include <cassert>
-#include <iostream>//TODO
 
 const std::string GameOfLife::sTitle = "Game of Life";
 const size_t GameOfLife::sGridSize = 600;//600
@@ -141,7 +140,8 @@ void GameOfLife::handleFileEvent()
 					}
 					break;
 				case sf::Keyboard::Escape:
-					mWindow.close();
+					mFileModule.clearMessage();
+					mBuffer.clear();
 					break;
 				}
 			}
@@ -152,6 +152,7 @@ void GameOfLife::handleFileEvent()
 		}
 		else if (event.type == sf::Event::KeyPressed || event.type == sf::Event::MouseButtonReleased)
 		{
+			mBuffer.clear();
 			mFileModule.clearMessage();
 		}
 

@@ -1,6 +1,5 @@
 #include "FileModule.h"
 #include <experimental/filesystem>
-#include <iostream> //TODO
 
 FileModule::FileModule(sf::RenderWindow & window, sf::Font &font)
 	: mWindow(window)
@@ -17,6 +16,7 @@ bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 	outputFile.open(filename, std::ios::binary);
 	if (!outputFile.is_open())
 	{
+		clearMessage();
 		printMessage(std::string("Sauvegarde de ") + filename + " a échoué.");
 		printMessage("Appuyez sur une touche pour continuer...");
 		mIsSaving = false;
@@ -39,6 +39,7 @@ bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 		}
 	}
 	outputFile.close();
+	clearMessage();
 	printMessage(filename + " sauvegardé !");
 	printMessage("Appuyez sur une touche pour continuer...");
 	mIsSaving = false;
@@ -52,6 +53,7 @@ bool FileModule::loadGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 	inputFile.open(filename, std::ios::binary);
 	if (!inputFile.is_open())
 	{
+		clearMessage();
 		printMessage(std::string("Chargement de ") + filename + " a échoué.");
 		printMessage("Appuyez sur une touche pour continuer...");
 		mIsLoading = false;
@@ -71,6 +73,7 @@ bool FileModule::loadGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 	}
 	delete[] buffer;
 	inputFile.close();
+	clearMessage();
 	printMessage(filename + " chargé !");
 	printMessage("Appuyez sur une touche pour continuer...");
 	mIsLoading = false;
@@ -126,7 +129,7 @@ void FileModule::draw()
 		msgText.setFont(mFont);
 		msgText.setCharacterSize(20);
 		int xText = 100;
-		int yText = 100;
+		int yText = 20;
 		
 		msgText.setFillColor(sf::Color::White);
 		for (auto msg : mMessage)
@@ -162,6 +165,8 @@ void FileModule::clearMessage()
 {
 	mMessage.clear();
 	mHasMessage = false;
+	mIsSaving = false;
+	mIsLoading = false;
 }
 
 bool FileModule::hasMessage()
