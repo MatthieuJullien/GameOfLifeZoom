@@ -8,13 +8,13 @@ class FileModule
 {
 public:
 	FileModule(sf::RenderWindow &window, sf::Font &font);
-	bool saveGrid(std::vector<bool> &cellsMatrix, const std::string &filename);
-	bool loadGrid(std::vector<bool> &cellsMatrix, const std::string &filename);
+	bool saveGrid(std::vector<bool> &cellsMatrix, std::string &filename);
+	bool loadGrid(std::vector<bool> &cellsMatrix, std::string &filename);
 	void save();
 	void load();
 	bool isSaving();
 	bool isLoading();
-	void draw(std::string &filenameBuffer);
+	void draw();
 	void printMessage(std::string message);
 	void popMessage();
 	void clearMessage();

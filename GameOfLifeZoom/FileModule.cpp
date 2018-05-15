@@ -1,4 +1,5 @@
 #include "FileModule.h"
+#include <experimental/filesystem>
 #include <iostream> //TODO
 
 FileModule::FileModule(sf::RenderWindow & window, sf::Font &font)
@@ -9,9 +10,10 @@ FileModule::FileModule(sf::RenderWindow & window, sf::Font &font)
 	, mIsLoading(false)
 {}
 
-bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, const std::string &filename)
+bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 {
-	std::ofstream outputFile;
+	std::ofstream outputFile; 
+	filename += ".grid";
 	outputFile.open(filename, std::ios::binary);
 	if (!outputFile.is_open())
 	{
@@ -43,9 +45,10 @@ bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, const std::string &fil
 	return true;
 }
 
-bool FileModule::loadGrid(std::vector<bool>& cellsMatrix, const std::string &filename)
+bool FileModule::loadGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 {
 	std::ifstream inputFile;
+	filename += ".grid";
 	inputFile.open(filename, std::ios::binary);
 	if (!inputFile.is_open())
 	{
@@ -83,7 +86,19 @@ void FileModule::save()
 
 void FileModule::load()
 {
+	namespace fs = std::experimental::filesystem;
+
 	mIsLoading = true;
+	printMessage("Liste des grilles enregistrées :");
+	printMessage("");
+	for (auto& p : fs::directory_iterator(fs::current_path()))
+	{
+		if (p.path().extension().string() == ".grid")
+		{
+			printMessage("*        " + p.path().stem().string());
+		}
+	}
+	printMessage("");
 	printMessage("Entrez le nom de la grille à charger :");
 	printMessage("");
 }
@@ -98,15 +113,8 @@ bool FileModule::isLoading()
 	return mIsLoading;
 }
 
-void FileModule::draw(std::string &filenameBuffer)
+void FileModule::draw()
 {
-	if (mIsSaving)
-		std::cout << "saving in : ";
-	if (mIsLoading)
-		std::cout << "loading : ";
-	std::cout << filenameBuffer << std::endl;
-
-
 	if (mHasMessage)
 	{
 		sf::Vector2f winSize(mWindow.getSize());

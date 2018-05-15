@@ -115,38 +115,46 @@ void GameOfLife::handleFileEvent()
 				mFileModule.popMessage();
 				mFileModule.printMessage("    " + mBuffer);
 			}
-			else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::BackSpace)
+			else if (event.type == sf::Event::KeyPressed)
 			{
-				if (!mBuffer.empty())
+				switch (event.key.code)
 				{
-					mBuffer.pop_back();
+				case sf::Keyboard::BackSpace:
+					if (!mBuffer.empty())
+					{
+						mBuffer.pop_back();
+					}
+					break;
+				case sf::Keyboard::Return:
+					if (mFileModule.isSaving())
+					{
+						mFileModule.saveGrid(mCellsMatrix, mBuffer);
+						mBuffer.clear();
+					}
+					else if (mFileModule.isLoading())
+					{
+						if (mFileModule.loadGrid(mCellsMatrix, mBuffer) && !mZoom.isActive())
+						{
+							updateVertices();
+						}
+						mBuffer.clear();
+					}
+					break;
+				case sf::Keyboard::Escape:
+					mWindow.close();
+					break;
 				}
 			}
-			else if (event.key.code == sf::Keyboard::Return)
+			else if (event.type == sf::Event::Closed)
 			{
-				if (mFileModule.isSaving())
-				{
-					mFileModule.saveGrid(mCellsMatrix, mBuffer);
-					mBuffer.clear();
-				}
-				else if (mFileModule.isLoading())
-				{
-					if (mFileModule.loadGrid(mCellsMatrix, mBuffer) && !mZoom.isActive())
-					{
-						updateVertices();
-					}
-					mBuffer.clear();
-				}
+				mWindow.close();
 			}
 		}
 		else if (event.type == sf::Event::KeyPressed || event.type == sf::Event::MouseButtonReleased)
 		{
 			mFileModule.clearMessage();
 		}
-		else if (event.type == sf::Event::Closed)
-		{
-			mWindow.close();
-		}
+
 	}
 }
 
@@ -369,7 +377,7 @@ void GameOfLife::render()
 	}
 	mWindow.draw(mSeparator);
 	mMenu.draw(mWindow, mGeneration, mSpeed, mZoom.getFractionOfTheGrid(), mZoom.isActive(), mIsPaused);
-	mFileModule.draw(mBuffer);
+	mFileModule.draw();
 	mWindow.display();
 }
 

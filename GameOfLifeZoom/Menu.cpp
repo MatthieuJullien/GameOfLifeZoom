@@ -44,7 +44,7 @@ void Menu::draw(sf::RenderWindow & window, int generation, int speed, int zoomLe
 	menuString = menuString
 		+ "Generation : " + std::to_string(generation) + "\n"
 		+ "Vitesse de la simulation : " + std::to_string(speed + 1) + "/7\n"
-		+ "Niveau de zoom : " + std::to_string(zoomLevel) + "\n"
+		+ "Niveau de zoom : " + std::to_string(zoomLevel) + "/ 16\n"
 		+ "Zoom : " + zoomStr + "\n"
 		+ "Lecture : " + lecture + "\n"
 		+ "-----------------------------------------------------\n"
@@ -63,7 +63,7 @@ void Menu::draw(sf::RenderWindow & window, int generation, int speed, int zoomLe
 		+ "I :\n"
 		+ "    Inverser l'état des cellules\n\n"
 		+ "S :\n"
-		+ "    Sauvegarder la grille\n\n"
+		+ "    Sauvegarder la grille\n"
 		+ "C :\n"
 		+ "    Charger une grille\n\n"
 		+ populate
