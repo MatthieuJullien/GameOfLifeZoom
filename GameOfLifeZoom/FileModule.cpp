@@ -1,23 +1,48 @@
 #include "FileModule.h"
 #include <experimental/filesystem>
+#include <iostream>//TODO
+#include <random>
+#include <cassert>
 
 FileModule::FileModule(sf::RenderWindow & window, sf::Font &font)
 	: mWindow(window)
 	, mHasMessage(false)
 	, mFont(font)
+	, mFileNames()
 	, mIsSaving(false)
 	, mIsLoading(false)
-{}
+	, mPage(0)
+{
+	namespace fs = std::experimental::filesystem;
+	fs::directory_iterator it(fs::current_path());
+	fs::directory_iterator end;
+	for (auto entry : fs::directory_iterator(fs::current_path()))
+	{
+		if (entry.path().extension().string() == ".rle")
+		{
+			if (entry.path().stem().string().substr(0, 5) == "grid.")
+			{
+				mFileNames.push_front(entry.path().stem().string());
+			}
+			else
+			{
+				mFileNames.push_back(entry.path().stem().string());
+			}
+		}
+	}
+	for (auto f : mFileNames)
+		std::cout << f << std::endl;
+}
 
 bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 {
 	std::ofstream outputFile; 
-	filename += ".grid";
-	outputFile.open(filename, std::ios::binary);
+	std::string fullFilename = "grid." + filename + ".rle";
+	outputFile.open(fullFilename, std::ios::binary);
 	if (!outputFile.is_open())
 	{
 		clearMessage();
-		printMessage(std::string("Sauvegarde de ") + filename + " a échoué.");
+		printMessage(std::string("Sauvegarde de ") + fullFilename + " a échoué.");
 		printMessage("Appuyez sur une touche pour continuer...");
 		mIsSaving = false;
 		return false;
@@ -39,8 +64,9 @@ bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 		}
 	}
 	outputFile.close();
+	mFileNames.push_front("grid." + filename);
 	clearMessage();
-	printMessage(filename + " sauvegardé !");
+	printMessage(fullFilename + " sauvegardé !");
 	printMessage("Appuyez sur une touche pour continuer...");
 	mIsSaving = false;
 	return true;
@@ -49,7 +75,7 @@ bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 bool FileModule::loadGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 {
 	std::ifstream inputFile;
-	filename += ".grid";
+	filename += ".rle";
 	inputFile.open(filename, std::ios::binary);
 	if (!inputFile.is_open())
 	{
@@ -87,33 +113,46 @@ void FileModule::save()
 	printMessage("");
 }
 
-void FileModule::load()
+void FileModule::load(const int page)
 {
-	namespace fs = std::experimental::filesystem;
-
 	mIsLoading = true;
 	printMessage("Liste des grilles enregistrées :");
 	printMessage("");
-	for (auto& p : fs::directory_iterator(fs::current_path()))
+	mPage += page;
+	const int nbFilePerPage = 10;
+	if (mPage * nbFilePerPage >= mFileNames.size())
 	{
-		if (p.path().extension().string() == ".grid")
-		{
-			printMessage("*        " + p.path().stem().string());
-		}
+		--mPage;
+	}
+	if (mPage < 0)
+	{
+		mPage = 0;
+	}
+	for (int i = mPage * nbFilePerPage; i < mFileNames.size() && i < (mPage + 1) * nbFilePerPage; ++i)
+	{
+		std::cout << i << " : " << mFileNames[i] << std::endl;
+		printMessage("*        " + mFileNames[i]);
 	}
 	printMessage("");
+	printMessage("Page " + std::to_string(mPage));
+	printMessage("Page suivante : flèche droite");
 	printMessage("Entrez le nom de la grille à charger :");
 	printMessage("");
 }
 
-bool FileModule::isSaving()
+bool FileModule::isSaving() const
 {
 	return mIsSaving;
 }
 
-bool FileModule::isLoading()
+bool FileModule::isLoading() const
 {
 	return mIsLoading;
+}
+
+bool FileModule::hasMessage() const
+{
+	return mHasMessage;
 }
 
 void FileModule::draw()
@@ -169,7 +208,13 @@ void FileModule::clearMessage()
 	mIsLoading = false;
 }
 
-bool FileModule::hasMessage()
+void FileModule::magic(std::vector<bool>& cellsMatrix)
 {
-	return mHasMessage;
+	std::random_device r;
+	std::default_random_engine e1(r());
+	std::uniform_int_distribution<int> uniform_dist(0, mFileNames.size() - 1);
+	int alea = uniform_dist(e1);
+	std::string filename = mFileNames[alea];
+	bool isLoaded = FileModule::loadGrid(cellsMatrix, filename);
+	assert(isLoaded);
 }

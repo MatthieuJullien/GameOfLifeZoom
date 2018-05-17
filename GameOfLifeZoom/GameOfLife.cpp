@@ -1,6 +1,7 @@
 #include "GameOfLife.h"
 #include <random>
 #include <cassert>
+#include <iostream>	//TODO
 
 const std::string GameOfLife::sTitle = "Game of Life";
 const size_t GameOfLife::sGridSize = 600;//600
@@ -107,7 +108,7 @@ void GameOfLife::handleFileEvent()
 			if (event.type == sf::Event::TextEntered && event.text.unicode < 128)
 			{
 				char c = static_cast<char>(event.text.unicode);
-				if (isalnum(c))
+				if (isalnum(c) || ispunct(c))
 				{
 					mBuffer += c;
 				}			
@@ -143,6 +144,20 @@ void GameOfLife::handleFileEvent()
 					mFileModule.clearMessage();
 					mBuffer.clear();
 					break;
+				case sf::Keyboard::Left:
+					if (mFileModule.isLoading())
+					{
+						mFileModule.clearMessage();
+						mFileModule.load(FileModule::Navigation::previous);
+					}
+					break;
+				case sf::Keyboard::Right:
+					if (mFileModule.isLoading())
+					{
+						mFileModule.clearMessage();
+						mFileModule.load(FileModule::Navigation::next);
+					}
+					break;
 				}
 			}
 			else if (event.type == sf::Event::Closed)
@@ -175,7 +190,7 @@ void GameOfLife::handleEvent()
 			case sf::Keyboard::C:
 				if (mIsPaused)
 				{
-					mFileModule.load();
+					mFileModule.load(FileModule::Navigation::first);
 				}
 				break;
 			case sf::Keyboard::S:
@@ -223,6 +238,19 @@ void GameOfLife::handleEvent()
 						}
 					}
 				}
+			}
+		}
+		else if (event.type == sf::Event::MouseWheelMoved)
+		{
+			if (event.mouseWheel.delta < 0)
+			{
+				mZoom.reduceZoom();
+				initZoomArea();
+			}
+			else
+			{
+				mZoom.augmentZoom();
+				initZoomArea();
 			}
 		}
 		else if (event.type == sf::Event::Closed)
@@ -307,13 +335,12 @@ void GameOfLife::handleKeyPressed(const sf::Keyboard::Key &key)
 		mZoom.out();
 		reverse_grid();
 		break;
-	case sf::Keyboard::P:
-		mZoom.augmentZoom();
-		initZoomArea();
-		break;
 	case sf::Keyboard::M:
-		mZoom.reduceZoom();
-		initZoomArea();
+		mFileModule.magic(mCellsMatrix);
+		if (!mZoom.isActive())
+		{
+			updateVertices();
+		}
 		break;
 	default:
 		break;
