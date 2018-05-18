@@ -45,7 +45,7 @@ void GameOfLife::init()
 		}
 	}
 
-	if (!mFont.loadFromFile("font1.ttf"))
+	if (!mFont.loadFromFile("font.ttf"))
 	{
 		throw std::runtime_error("Unable to load font1.ttf");
 	}

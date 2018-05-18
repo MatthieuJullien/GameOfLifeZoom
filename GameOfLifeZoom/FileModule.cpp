@@ -15,9 +15,10 @@ FileModule::FileModule(sf::RenderWindow & window, sf::Font &font)
 	, mPage(0)
 {
 	namespace fs = std::experimental::filesystem;
-	fs::directory_iterator it(fs::current_path());
+	fs::path rledir(fs::current_path().string() + "/rle/");
+	fs::directory_iterator it(rledir);
 	fs::directory_iterator end;
-	for (auto entry : fs::directory_iterator(fs::current_path()))
+	for (auto entry : fs::directory_iterator(rledir))
 	{
 		if (entry.path().extension().string() == ".rle")
 		{
@@ -37,7 +38,7 @@ bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 {
 	std::ofstream outputFile; 
 	std::string fullFilename = "grid." + filename + ".rle";
-	outputFile.open(fullFilename, std::ios::binary);
+	outputFile.open("rle/" + fullFilename, std::ios::binary);
 	if (!outputFile.is_open())
 	{
 		clearMessage();
@@ -94,7 +95,7 @@ bool FileModule::loadGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 {
 	std::ifstream inputFile;
 	filename += ".rle";
-	inputFile.open(filename);
+	inputFile.open("rle/" + filename);
 	if (!inputFile.is_open())
 	{
 		clearMessage();
