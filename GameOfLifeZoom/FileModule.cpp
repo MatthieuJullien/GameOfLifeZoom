@@ -1,8 +1,9 @@
 #include "FileModule.h"
+#include "GameOfLife.h"
 #include <experimental/filesystem>
-#include <iostream>//TODO
 #include <random>
 #include <cassert>
+#include <regex>
 
 FileModule::FileModule(sf::RenderWindow & window, sf::Font &font)
 	: mWindow(window)
@@ -30,8 +31,6 @@ FileModule::FileModule(sf::RenderWindow & window, sf::Font &font)
 			}
 		}
 	}
-	for (auto f : mFileNames)
-		std::cout << f << std::endl;
 }
 
 bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, std::string &filename)
@@ -42,27 +41,46 @@ bool FileModule::saveGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 	if (!outputFile.is_open())
 	{
 		clearMessage();
-		printMessage(std::string("Sauvegarde de ") + fullFilename + " a échoué.");
+		printMessage("Sauvegarde de " + fullFilename + " a échoué.");
 		printMessage("Appuyez sur une touche pour continuer...");
 		mIsSaving = false;
 		return false;
 	}
-	int byte_index = 0;
-	char byte = 0;
-	for (size_t i = 0; i < cellsMatrix.size(); ++i)
-	{
-		if (cellsMatrix[i])
+	const int gridSize = GameOfLife::sGridSize;
+	outputFile << "x = " << gridSize << ", y = " << gridSize << ", rule = B3/S23\n";
+	bool curState;
+	for (int h = 0; h < gridSize; ++h)
+	{	
+		curState = cellsMatrix[h * gridSize];
+		int runCount = 0;
+		for (int w = 0; w <= gridSize; ++w)
 		{
-			byte |= (1 << byte_index);
+			if (w == gridSize || cellsMatrix[w + h * gridSize] != curState)
+			{
+				char tag = curState ? 'o' : 'b';
+				if (runCount == 1)
+				{
+					outputFile << tag;
+				}
+				else
+				{
+					outputFile << runCount << tag;
+				}
+				runCount = 1;
+				curState = !curState;
+			}
+			else
+			{
+				++runCount;
+			}
 		}
-		++byte_index;
-		if (byte_index > 7)
+		if (h < gridSize - 1)
 		{
-			byte_index = 0;
-			outputFile.write(&byte, sizeof(byte));
-			byte = 0;
+			outputFile << '$';
 		}
 	}
+	outputFile << '!';
+	
 	outputFile.close();
 	mFileNames.push_front("grid." + filename);
 	clearMessage();
@@ -76,28 +94,105 @@ bool FileModule::loadGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 {
 	std::ifstream inputFile;
 	filename += ".rle";
-	inputFile.open(filename, std::ios::binary);
+	inputFile.open(filename);
 	if (!inputFile.is_open())
 	{
 		clearMessage();
-		printMessage(std::string("Chargement de ") + filename + " a échoué.");
+		printMessage("Chargement de " + filename + " a échoué.");
 		printMessage("Appuyez sur une touche pour continuer...");
 		mIsLoading = false;
 		return false;
 	}
-	size_t size = cellsMatrix.size() / 8;//nombre d'octects à lire : 45000
-	char * buffer = new char[size];
-	inputFile.read(buffer, size);
-	inputFile.close();
 	cellsMatrix.clear();
-	for (size_t i = 0; i < size; ++i)
+	std::string line;
+	while (std::getline(inputFile, line) && line.at(0) == '#')
+		;	//skip commentary 
+	int x = std::stoi(std::regex_replace(line, std::regex("[^0-9]*([0-9]+).*"), std::string("$1")));
+	int y = std::stoi(std::regex_replace(
+		line,
+		std::regex("[^0-9]*[0-9]+[^0-9]+([0-9]+).*"),
+		std::string("$1")));
+	if (x > GameOfLife::sGridSize || y > GameOfLife::sGridSize)
 	{
-		for (int bit_index = 0; bit_index < 8; ++bit_index)
+		clearMessage();
+		printMessage("Chargement de " + filename + " a échoué.");
+		printMessage("Le pattern est trop grand pour la grille.");
+		printMessage("Appuyez sur une touche pour continuer...");
+		mIsLoading = false;
+		return false;
+	}
+	int offsetX = (GameOfLife::sGridSize - x) / 2;
+	int offsetY = (GameOfLife::sGridSize - y) / 2;
+	for (int i = offsetX; i > 0; --i)
+	{
+		for (int j = 0; j < GameOfLife::sGridSize; ++j)
 		{
-			cellsMatrix.emplace_back((static_cast<unsigned char>(buffer[i]) & (1U << bit_index)) >> bit_index);
+			cellsMatrix.push_back(false);
 		}
 	}
-	delete[] buffer;
+	char c;
+	std::string run_count;
+	int total_line = 0;
+	int line_count = 0;
+	bool isNewLine = true;
+	while (true)
+	{
+		c = '\0';
+		run_count = "0";
+		if (total_line == 0)	//new line
+		{
+			for (int i = 0; i < offsetY; ++i)
+			{
+				cellsMatrix.push_back(false);
+			}
+			total_line += offsetY;
+		}
+		while (inputFile.get(c) && (isdigit(c) || c == '\n'))
+		{
+			if (isdigit(c))
+			{
+				run_count += c;
+			}
+		}
+		if (c != '$' && c != '!')
+		{
+			
+			int rc = std::stoi(run_count);
+			rc = (rc == 0) ? 1 : rc;
+			total_line += rc;
+			for (; rc > 0; --rc)
+			{
+				cellsMatrix.push_back(c == 'o');
+			}
+		}
+		else
+		{
+			// Compléter la ligne avec des cellules mortes
+			for (int i = GameOfLife::sGridSize - total_line; i > 0; --i)
+			{
+				cellsMatrix.push_back(false);
+			}
+			total_line = 0;
+			if (c == '$')
+			{
+				++line_count;
+			}
+			if (c == '!')
+			{
+				++line_count;
+				// Compléter la grille avec des lignes mortes
+				for (int i = GameOfLife::sGridSize - (line_count + offsetX); i > 0; --i)
+				{
+					for (int j = 0; j < GameOfLife::sGridSize; ++j)
+					{
+						cellsMatrix.push_back(false);
+					}
+				}
+				break;
+			}
+		}
+	}
+
 	inputFile.close();
 	clearMessage();
 	printMessage(filename + " chargé !");
@@ -109,6 +204,8 @@ bool FileModule::loadGrid(std::vector<bool>& cellsMatrix, std::string &filename)
 void FileModule::save()
 {
 	mIsSaving = true;
+	printMessage("Le nom de la grille sera préfixé par 'grid.'");
+	printMessage("La grille sera enregistrée dans un fichier .rle");
 	printMessage("Entrez le nom de la grille :");
 	printMessage("");
 }
@@ -130,7 +227,6 @@ void FileModule::load(const int page)
 	}
 	for (int i = mPage * nbFilePerPage; i < mFileNames.size() && i < (mPage + 1) * nbFilePerPage; ++i)
 	{
-		std::cout << i << " : " << mFileNames[i] << std::endl;
 		printMessage("*        " + mFileNames[i]);
 	}
 	printMessage("");

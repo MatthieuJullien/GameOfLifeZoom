@@ -60,7 +60,8 @@ private:
 		medium,
 		fast,
 		faster,
-		fastest
+		fastest,
+		hyperspeed
 	};
 	sf::Time mDelay;
 	sf::Time mAccu;

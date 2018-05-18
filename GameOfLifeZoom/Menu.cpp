@@ -46,7 +46,7 @@ void Menu::draw(sf::RenderWindow & window, int generation, int speed, int zoomLe
 	}
 	menuString = menuString
 		+ "Generation : " + std::to_string(generation) + "\n"
-		+ "Vitesse de la simulation : " + std::to_string(speed + 1) + "/7\n"
+		+ "Vitesse de la simulation : " + std::to_string(speed + 1) + "/8\n"
 		+ "Niveau de zoom : " + std::to_string(zoomLevel - 1) + "/ 15\n"
 		+ "Zoom : " + zoomStr + "\n"
 		+ "Lecture : " + lecture + "\n"

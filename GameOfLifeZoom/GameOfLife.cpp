@@ -1,14 +1,13 @@
 #include "GameOfLife.h"
 #include <random>
 #include <cassert>
-#include <iostream>	//TODO
 
 const std::string GameOfLife::sTitle = "Game of Life";
 const size_t GameOfLife::sGridSize = 600;//600
 const sf::Color GameOfLife::sAliveColor = sf::Color::Green;
 const sf::Color GameOfLife::sDeadColor = sf::Color::Black;
 const sf::Color GameOfLife::sBackgroundColor = sf::Color(128, 128, 128, 255);
-const sf::Time GameOfLife::sTimePerFrame = sf::seconds(1.f / 60.f);
+const sf::Time GameOfLife::sTimePerFrame = sf::seconds(1.f / 240.f);
 
 GameOfLife::GameOfLife()
 	: mWindow(sf::VideoMode(1000, 600), sTitle, sf::Style::Titlebar | sf::Style::Close)
@@ -336,11 +335,15 @@ void GameOfLife::handleKeyPressed(const sf::Keyboard::Key &key)
 		reverse_grid();
 		break;
 	case sf::Keyboard::M:
-		mFileModule.magic(mCellsMatrix);
-		if (!mZoom.isActive())
+		if (mIsPaused)
 		{
-			updateVertices();
+			mFileModule.magic(mCellsMatrix);
+			if (!mZoom.isActive())
+			{
+				updateVertices();
+			}
 		}
+
 		break;
 	default:
 		break;
@@ -500,7 +503,7 @@ void GameOfLife::speedUpDt(bool accelerate)
 {
 	if (accelerate)
 	{
-		mSpeed = (mSpeed + 1) > fastest ? fastest : mSpeed + 1;
+		mSpeed = (mSpeed + 1) > hyperspeed ? hyperspeed : mSpeed + 1;
 	}
 	else
 	{
@@ -528,6 +531,9 @@ void GameOfLife::speedUpDt(bool accelerate)
 		break;
 	case fastest:
 		mDelay = sf::seconds(1.f / 120.f);
+		break;
+	case hyperspeed:
+		mDelay = sf::seconds(1.f / 240.f);
 		break;
 	default:
 		break;
